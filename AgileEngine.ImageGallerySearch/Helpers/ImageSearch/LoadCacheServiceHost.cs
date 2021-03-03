@@ -1,5 +1,6 @@
 ﻿using AgileEngine.ImageGallerySearch.Model;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Threading;
@@ -13,12 +14,15 @@ namespace AgileEngine.ImageGallerySearch.Helpers.ImageSearch
 
         public ImageSearchConfig ImageSearchConfig { get; }
         public IImageCacheRepository ImageCacheRepository { get; }
+        public ILogger<LoadCacheServiceHost> Logger { get; }
 
         public LoadCacheServiceHost(IOptions<ImageSearchConfig> imageSearchConfig,
-            IImageCacheRepository imageCacheRepository)
+            IImageCacheRepository imageCacheRepository,
+            ILogger<LoadCacheServiceHost> logger)
         {
             ImageSearchConfig = imageSearchConfig.Value;
             ImageCacheRepository = imageCacheRepository;
+            Logger = logger;
         }
 
         public void Dispose()
@@ -36,13 +40,18 @@ namespace AgileEngine.ImageGallerySearch.Helpers.ImageSearch
 
         private void DoWork(object state)
         {
-            ImageCacheRepository.LoadCache();
+            try
+            {
+                ImageCacheRepository.LoadCache().Wait();
+            }
+            catch(Exception e)
+            {
+                Logger.LogError(e, "Error loading cache");
+            }
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            //_logger.LogInformation("Timed Hosted Service is stopping.");
-
             _timer?.Change(Timeout.Infinite, 0);
 
             return Task.CompletedTask;

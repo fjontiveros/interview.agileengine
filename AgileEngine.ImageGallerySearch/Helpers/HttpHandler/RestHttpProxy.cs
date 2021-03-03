@@ -45,7 +45,14 @@ namespace AgileEngine.ImageGallerySearch.Helpers
                         return CustomJsonSerializer.Deserialize<T>(responseBody);
                     }
 
-                    throw new UnauthorizedException();
+                    if(responseMessage.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        throw new UnauthorizedException();
+                    }
+                    else
+                    {
+                        throw new Exception($"Error requesting {httpRequestMessage.RequestUri}. Status code: {responseMessage.StatusCode}");
+                    }
                 }
             }
         }
